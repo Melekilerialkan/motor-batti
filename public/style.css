@@ -1,23 +1,14 @@
 * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif; }
 
-/* YAPAY ZEKA HİSSİNİ YIKAN MAT CYBERPUNK PALET */
 body { 
     background-color: #0b0f19; 
     color: #f1f5f9; 
     text-align: center; 
-    padding: 12px;
+    padding: 10px;
 }
 
 .screen { display: none; }
 .screen.active { display: block; }
-
-.game-title {
-    font-size: 2rem;
-    font-weight: 900;
-    color: #ff2a6d;
-    text-shadow: 0 0 15px rgba(255, 42, 109, 0.4);
-    margin-bottom: 20px;
-}
 
 .header-user { display: flex; justify-content: space-between; align-items: center; max-width: 340px; margin: 0 auto 10px; }
 .btn-danger { background: #d32f2f; padding: 6px 12px; font-size: 12px; }
@@ -37,14 +28,14 @@ button:active { transform: scale(0.97); }
 button.btn-secondary { background: #1e293b; color: #cbd5e1; }
 button.btn-action { background: #05d9e8; color: #0f172a; font-weight: 800; }
 
-.action-bar { display: flex; gap: 8px; justify-content: center; margin-bottom: 10px; max-width: 340px; margin-left: auto; margin-right: auto; }
-.action-bar button { padding: 8px 12px; font-size: 13px; background: #1e293b; color: #05d9e8; border: 1px solid #05d9e8; }
+.action-bar { display: flex; gap: 8px; justify-content: center; margin-bottom: 8px; max-width: 340px; margin: 0 auto 8px; }
+.action-bar button { padding: 8px 12px; font-size: 12px; background: #1e293b; color: #05d9e8; border: 1px solid #05d9e8; }
 
 .btn-ready-glow { width: 100%; max-width: 340px; margin-top: 10px; background: #05d9e8; color: #051923; font-size: 16px; font-weight: 900; }
 
 .boards-container { display: flex; justify-content: center; gap: 30px; margin-top: 5px; }
 
-/* GRID & SHAKE EFEKTİ */
+/* GRID KARELERİ */
 .grid { 
     display: grid; 
     grid-template-columns: repeat(10, 1fr); 
@@ -59,15 +50,12 @@ button.btn-action { background: #05d9e8; color: #0f172a; font-weight: 800; }
     border-radius: 8px;
 }
 
-.grid.shake {
-    animation: boardShake 0.3s cubic-bezier(.36,.07,.19,.97) both;
-}
+.grid.shake { animation: boardShake 0.3s ease-in-out; }
 
 @keyframes boardShake {
-    10%, 90% { transform: translate3d(-2px, 0, 0); }
-    20%, 80% { transform: translate3d(3px, 0, 0); }
-    30%, 50%, 70% { transform: translate3d(-5px, 0, 0); }
-    40%, 60% { transform: translate3d(5px, 0, 0); }
+    0%, 100% { transform: translateX(0); }
+    20%, 60% { transform: translateX(-4px); }
+    40%, 80% { transform: translateX(4px); }
 }
 
 .cell {
@@ -80,46 +68,98 @@ button.btn-action { background: #05d9e8; color: #0f172a; font-weight: 800; }
     position: relative;
 }
 
-.cell.motor { background-color: rgba(5, 217, 232, 0.1); }
-
-/* VURUS ANIMASYONU VE ISKA */
-.cell.hit { 
-    background-color: rgba(255, 42, 109, 0.3) !important;
-    animation: hitPulse 0.4s ease-out;
-}
-.cell.hit::after {
-    content: "💥";
-    font-size: 16px;
-    animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-}
-
+.cell.motor { background-color: rgba(5, 217, 232, 0.15); }
+.cell.hit { background-color: rgba(255, 42, 109, 0.4) !important; }
 .cell.miss { background-color: #1a202c !important; }
-.cell.miss::after { content: "❌"; font-size: 12px; opacity: 0.6; }
 
-@keyframes popIn { 0% { transform: scale(0); } 100% { transform: scale(1.2); } }
-@keyframes hitPulse { 0% { background-color: #ff2a6d; } 100% { background-color: rgba(255, 42, 109, 0.3); } }
-
-/* ESNEYEN TEK PARÇA MOTOR GÖRSELİ */
-.motor-overlay-img {
+/* TAHTADA 2x2 ESNEYEN MOTOR KATMANI */
+.motor-overlay-container {
     position: absolute;
     top: 0;
     left: 0;
+    width: 200%;
+    height: 200%;
     pointer-events: none;
     z-index: 5;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+}
+
+.motor-overlay-container.single-icon img {
+    width: 100%;
+    height: 100%;
     object-fit: contain;
 }
 
-.shots-badge { background: #1e293b; color: #05d9e8; padding: 6px 14px; border-radius: 20px; display: inline-block; margin-bottom: 8px; font-weight: bold; border: 1px solid #05d9e8; }
+/* KIRMIZI MOTOR İÇİN PEŞ PEŞE İKİ MOTOR GÖRSELİ */
+.motor-overlay-container.double-red {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 2px;
+}
+.motor-overlay-container.double-red img {
+    width: 90%;
+    height: 45%;
+    object-fit: contain;
+}
 
+/* ALT KISIMDA YAN YANA DURAN MOTOR SEÇİM ŞERİDİ */
+#fleet-selector-bar {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    background: #121829;
+    border: 1px solid #1e293b;
+    border-radius: 10px;
+    padding: 8px;
+    max-width: 340px;
+    margin: 8px auto 0;
+}
+
+.fleet-card {
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 8px;
+    padding: 6px 10px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    position: relative;
+    flex: 1;
+    margin: 0 4px;
+}
+
+.fleet-card.selected {
+    border-color: #05d9e8;
+    background: rgba(5, 217, 232, 0.1);
+    box-shadow: 0 0 8px rgba(5, 217, 232, 0.3);
+}
+
+.fleet-card img {
+    width: 32px;
+    height: 32px;
+    object-fit: contain;
+}
+
+.fleet-card .badge-count {
+    font-size: 11px;
+    font-weight: 800;
+    color: #05d9e8;
+}
+
+.shots-badge { background: #1e293b; color: #05d9e8; padding: 6px 14px; border-radius: 20px; display: inline-block; margin-bottom: 8px; font-weight: bold; border: 1px solid #05d9e8; }
 .mobile-tabs { display: none; margin-bottom: 10px; }
 .tab-btn { background: #121829; color: #94a3b8; }
 .tab-btn.active { background: #ff2a6d; color: white; }
 
-/* MODAL POP-UP */
 .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 1000; justify-content: center; align-items: center; }
 .modal-overlay.active { display: flex; }
-.modal-content { background: #121829; border: 2px solid #ff2a6d; padding: 25px; border-radius: 16px; max-width: 320px; width: 88%; color: white; box-shadow: 0 10px 30px rgba(255, 42, 109, 0.3); }
-.modal-content p { font-size: 16px; margin-bottom: 20px; line-height: 1.4; font-weight: 600; }
+.modal-content { background: #121829; border: 2px solid #ff2a6d; padding: 25px; border-radius: 16px; max-width: 320px; width: 88%; color: white; }
 
 @media (max-width: 768px) {
     .boards-container { flex-direction: column; gap: 0; }
