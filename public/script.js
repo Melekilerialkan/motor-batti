@@ -83,6 +83,17 @@ function closeModal() {
     document.getElementById('custom-modal').classList.remove('active');
 }
 
+// Engellemeyen kısa bilgi mesajı (modal gibi "Tamam" bastırmaz)
+let toastTimer = null;
+function showToast(msg) {
+    const el = document.getElementById('toast');
+    if (!el) return;
+    el.innerText = msg;
+    el.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.classList.remove('show'), 2500);
+}
+
 function createBoard(boardId, clickHandler) {
     const board = document.getElementById(boardId);
     board.innerHTML = '';
@@ -169,7 +180,7 @@ function setupFleetSelectorBar() {
         inventory[f.type] = f.count;
         totalPartsToWin += f.size * f.count;
         barHTML += `
-            <div class="fleet-card" onclick="selectFleetCard('${f.type}', ${f.size}, this)">
+            <div class="fleet-card" data-type="${f.type}" onclick="selectFleetCard('${f.type}', ${f.size}, this)">
                 <img src="${MOTOR_IMAGES[f.type]}">
                 <span class="badge-count" id="count-${f.type}">x${f.count}</span>
             </div>
@@ -308,9 +319,11 @@ function handleMyBoardClick(index) {
 
     const boardCells = document.getElementById('my-board').children;
 
-    // 1. Zaten konulmuş bir motora tıklandıysa onu kaldırmak/taşımak için seç
+    // 1. Yerleştirilmiş bir motora dokunulduysa onu elimize al (taşımak için).
+    // Eskiden bu sadece hiçbir kart seçili değilken çalışıyordu; bir motor koyduktan sonra
+    // kart seçili kaldığı için dokununca "Üst üste yerleştiremezsiniz" hatası çıkıyordu.
     const existingIndex = placedMotors.findIndex(m => m.cells.includes(index));
-    if (existingIndex !== -1 && !selectedMotorType) {
+    if (existingIndex !== -1) {
         selectedMotorIndexToMove = existingIndex;
         const motorToMove = placedMotors[existingIndex];
         selectedMotorType = motorToMove.type;
@@ -326,7 +339,16 @@ function handleMyBoardClick(index) {
         inventory[selectedMotorType]++;
         updateInventoryBadges();
         document.getElementById('btn-ready').style.display = 'none';
-        showModal("Motor serbest bırakıldı! Yerleştirmek istediğin yeni boş kareye tıkla.");
+
+        // Elimizdeki motorun kartını vurgula, yön butonunu motorun gerçek yönüne getir
+        document.querySelectorAll('.fleet-card').forEach(c =>
+            c.classList.toggle('selected', c.dataset.type === selectedMotorType));
+        if (selectedMotorType === 'motocross') {
+            updateRotationButtonText();
+        } else {
+            document.getElementById('btn-rotate').innerText = isHorizontal ? "Yön: YATAY 🔄" : "Yön: DİKEY 🔄";
+        }
+        showToast("Motor elinde ✋ Yeni yerine dokun (yönü değiştirmek için 🔄)");
         return;
     }
 
@@ -353,6 +375,8 @@ function handleMyBoardClick(index) {
     }
 
     addMotorToBoard(boardCells, index, cellsToOccupy);
+    const toastEl = document.getElementById('toast');
+    if (toastEl) toastEl.classList.remove('show');
 
     inventory[selectedMotorType]--;
     updateInventoryBadges();

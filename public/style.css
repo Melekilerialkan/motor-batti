@@ -149,6 +149,15 @@ button.btn-action { background: #05d9e8; color: #0f172a; font-weight: 800; }
 .modal-overlay.active { display: flex; }
 .modal-content { background: #121829; border: 2px solid #ff2a6d; padding: 25px; border-radius: 16px; max-width: 320px; width: 88%; color: white; }
 
+/* KISA BİLGİ MESAJI (toast) */
+#toast {
+    position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%) translateY(20px);
+    background: #121829; color: #f1f5f9; border: 1px solid #05d9e8; border-radius: 20px;
+    padding: 10px 16px; font-size: 13px; font-weight: 600; max-width: 90vw;
+    opacity: 0; pointer-events: none; transition: opacity 0.2s, transform 0.2s; z-index: 900;
+}
+#toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
 /* SEKMELER: sadece telefonda görünür, aktif sekmedeki tahta gösterilir */
 .mobile-tabs { display: none; gap: 8px; max-width: 340px; margin: 0 auto 8px; }
 .tab-btn { background: #1e293b; color: #cbd5e1; border: 1px solid #334155; }
