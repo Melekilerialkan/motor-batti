@@ -120,6 +120,10 @@ socket.on('appAlert', (data) => showModal(data.message));
 socket.on('appError', (data) => showModal("Hata: " + data.message));
 
 socket.on('loginSuccess', (data) => {
+    // Seri sunucuda tutulmuyor; aynı kullanıcı tekrar girerse yerel seriyi koru
+    let prev = {};
+    try { prev = JSON.parse(localStorage.getItem('motor_batti_user') || '{}'); } catch (e) {}
+    data.winStreak = prev.username === data.username ? (prev.winStreak || 0) : 0;
     localStorage.setItem('motor_batti_user', JSON.stringify(data));
     switchScreen('lobby-screen');
     document.getElementById('welcome-text').innerText = `Hoş geldin, ${data.username}!`;
@@ -613,19 +617,33 @@ function triggerShake(boardId) {
     setTimeout(() => board.classList.remove('shake'), 300);
 }
 
+function renderStats(user) {
+    document.getElementById('stats-panel').innerHTML =
+        `<p style="color:#05d9e8;">Galibiyet: ${user.wins || 0} | Mağlubiyet: ${user.losses || 0}</p>`;
+}
+
 socket.on('gameEnded', (data) => {
     gamePhase = 'over';
     const savedUser = JSON.parse(localStorage.getItem('motor_batti_user') || '{}');
     const isWinner = (data.winner === savedUser.username);
 
+    // Sunucu veritabanını zaten güncelliyor; burada lobideki sayaçları ve seriyi yerelde güncel tutuyoruz
     if (isWinner) {
         savedUser.wins = (savedUser.wins || 0) + 1;
-        localStorage.setItem('motor_batti_user', JSON.stringify(savedUser));
+        savedUser.winStreak = (savedUser.winStreak || 0) + 1;
+    } else {
+        savedUser.losses = (savedUser.losses || 0) + 1;
+        savedUser.winStreak = 0; // yenilgi seriyi bozar
+    }
+    localStorage.setItem('motor_batti_user', JSON.stringify(savedUser));
+    renderStats(savedUser);
 
-        if (savedUser.wins >= 3) {
+    if (isWinner) {
+        // Arka arkaya 3 galibiyet (ve sonrasında her galibiyet) Kavurma Kasırgası tetikler
+        if (savedUser.winStreak >= 3) {
             if (typeof confetti === 'function') confetti({ particleCount: 120, spread: 70, origin: { y: 0.6 } });
             showModal(
-                "🌪️🥩 KAVURMA KASIRGASI! 🥩🌪️\n3 Galibiyet Serisi Yaptın! Efsanesin!",
+                `🌪️🥩 KAVURMA KASIRGASI! 🥩🌪️\n${savedUser.winStreak} Galibiyet Serisi Yaptın! Efsanesin!`,
                 () => socket.emit('requestRematch', { roomCode: currentRoom }),
                 backToLobby,
                 "Rövanş İste 🔄", "Lobiye Dön 🚪"
