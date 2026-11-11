@@ -89,22 +89,22 @@ button.btn-action { background: #05d9e8; color: #0f172a; font-weight: 800; }
     left: 0;
     pointer-events: none;
     z-index: 10;
-    object-fit: contain;
+    /* contain olunca resim kare şeklinde kalıp tek karede küçük duruyordu;
+       fill ile motor kapladığı tüm karelere yayılır */
+    object-fit: fill;
 }
 
 /* TAM BATAN MOTORUN ORTAYA ÇIKAN GÖRSELİ */
 .destroyed-motor-overlay {
-    position: absolute;
-    pointer-events: none;
     z-index: 20;
-    object-fit: contain;
     filter: drop-shadow(0 0 8px #ff2a6d);
     animation: popDestroy 0.4s ease-out;
 }
 
+/* Sadece opacity: scale kullanınca satır içi rotate() ezilip resim önce düz, sonra dönük görünüyordu */
 @keyframes popDestroy {
-    0% { transform: scale(0.5); opacity: 0; }
-    100% { transform: scale(1); opacity: 1; }
+    0% { opacity: 0; }
+    100% { opacity: 1; }
 }
 
 /* ALT ŞERİT FİLO SEÇİMİ */
@@ -149,6 +149,19 @@ button.btn-action { background: #05d9e8; color: #0f172a; font-weight: 800; }
 .modal-overlay.active { display: flex; }
 .modal-content { background: #121829; border: 2px solid #ff2a6d; padding: 25px; border-radius: 16px; max-width: 320px; width: 88%; color: white; }
 
+/* SEKMELER: sadece telefonda görünür, aktif sekmedeki tahta gösterilir */
+.mobile-tabs { display: none; gap: 8px; max-width: 340px; margin: 0 auto 8px; }
+.tab-btn { background: #1e293b; color: #cbd5e1; border: 1px solid #334155; }
+.tab-btn.active { background: #ff2a6d; color: #fff; border-color: #ff2a6d; }
+
 @media (max-width: 768px) {
     .grid { max-width: 88vw; }
+    .mobile-tabs { display: flex; }
+    .board-section { display: none; }
+    .board-section.active-tab { display: block; }
+}
+
+/* Geniş ekranda iki tahta yan yana, sekmelere gerek yok */
+@media (min-width: 769px) {
+    .boards-container { flex-direction: row; justify-content: center; align-items: flex-start; gap: 30px; }
 }

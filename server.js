@@ -108,11 +108,13 @@ io.on('connection', (socket) => {
         socket.join(code);
         const currentUser = onlineUsers[socket.id] || { username: 'Oyuncu', db_id: 0 };
         
-        room.players.push({ 
-            socketId: socket.id, 
+        room.players.push({
+            socketId: socket.id,
             username: currentUser.username,
             db_id: currentUser.db_id,
-            aliveMotorsCount: room.settings.fleetMode === 'helmets' ? 5 : 6
+            aliveMotorsCount: room.settings.fleetMode === 'helmets' ? 5 : 6,
+            ready: false,
+            wantsRematch: false
         });
 
         if (room.players.length === 1) {
@@ -127,23 +129,23 @@ io.on('connection', (socket) => {
 
     socket.on('playerReady', (data) => {
         const room = rooms[data.roomCode];
-        if (room) {
-            const player = room.players.find(p => p.socketId === socket.id);
-            if (player && data.motorCount) {
-                player.aliveMotorsCount = data.motorCount;
-            }
+        if (!room) return;
+        const player = room.players.find(p => p.socketId === socket.id);
+        // Aynı oyuncu iki kez "hazırım" derse sayaç şişmesin
+        if (!player || player.ready) return;
+        player.ready = true;
+        if (data.motorCount) player.aliveMotorsCount = data.motorCount;
 
-            room.readyCount++;
-            if (room.readyCount === 2) {
-                room.turn = room.players[0].socketId;
-                room.shotsLeft = calculateInitialShots(room, room.turn);
+        room.readyCount++;
+        if (room.readyCount === 2) {
+            room.turn = room.players[0].socketId;
+            room.shotsLeft = calculateInitialShots(room, room.turn);
 
-                io.to(data.roomCode).emit('allReady', { 
-                    message: 'Savaş Başlıyor!',
-                    turn: room.turn,
-                    shotsLeft: room.shotsLeft
-                });
-            }
+            io.to(data.roomCode).emit('allReady', {
+                message: 'Savaş Başlıyor!',
+                turn: room.turn,
+                shotsLeft: room.shotsLeft
+            });
         }
     });
 
@@ -158,14 +160,17 @@ io.on('connection', (socket) => {
         const room = rooms[data.roomCode];
         if (!room) return;
 
-        if (data.destroyedMotor) {
-            const defender = room.players.find(p => p.socketId !== socket.id);
+        // İstemci batan motorun türünü destroyedType olarak gönderiyor
+        if (data.destroyedType) {
+            const defender = room.players.find(p => p.socketId === socket.id);
             if (defender && defender.aliveMotorsCount > 0) {
                 defender.aliveMotorsCount--;
             }
         }
 
-        io.to(data.roomCode).emit('updateBoard', data);
+        // Sonucu sadece vuran oyuncuya gönder. io.to(oda) vurulan oyuncuya da gidiyor
+        // ve onun "Rakip Saha" tahtasına sahte vuruş işliyordu.
+        socket.to(data.roomCode).emit('updateBoard', data);
 
         const mode = room.settings.shotMode;
         if (mode === 'combo') {
@@ -211,19 +216,44 @@ io.on('connection', (socket) => {
     socket.on('requestRematch', (data) => {
         const room = rooms[data.roomCode];
         if (room) {
+            const player = room.players.find(p => p.socketId === socket.id);
+            // Aynı oyuncu butona iki kez basınca rövanş tek başına başlamasın
+            if (!player || player.wantsRematch) return;
+            player.wantsRematch = true;
             room.rematchVotes = (room.rematchVotes || 0) + 1;
             socket.to(data.roomCode).emit('rematchOffered', { sender: onlineUsers[socket.id]?.username || 'Rakip' });
             if (room.rematchVotes === 2) {
                 room.readyCount = 0;
                 room.rematchVotes = 0;
-                room.players.forEach(p => p.aliveMotorsCount = room.settings.fleetMode === 'helmets' ? 5 : 6);
+                room.turn = null;
+                room.shotsLeft = 0;
+                room.players.forEach(p => {
+                    p.aliveMotorsCount = room.settings.fleetMode === 'helmets' ? 5 : 6;
+                    p.ready = false;
+                    p.wantsRematch = false;
+                });
                 io.to(data.roomCode).emit('startRematch', { settings: room.settings });
             }
         }
     });
 
+    // Oyuncu ayrılınca (sekme kapandı, sayfa yenilendi ya da lobiye döndü) odayı kapat.
+    // Eskiden oyuncu odada kalıyordu; aynı kodla tekrar girince "Oda dolu!" çıkıyordu.
+    function leaveRooms() {
+        for (const code of Object.keys(rooms)) {
+            const room = rooms[code];
+            if (!room.players.some(p => p.socketId === socket.id)) continue;
+            socket.to(code).emit('opponentLeft', { message: 'Rakip oyundan ayrıldı. Lobiye dönülüyor.' });
+            io.in(code).socketsLeave(code);
+            delete rooms[code];
+        }
+    }
+
+    socket.on('leaveRoom', leaveRooms);
+
     socket.on('disconnect', () => {
         delete onlineUsers[socket.id];
+        leaveRooms();
     });
 });
 
