@@ -26,13 +26,24 @@ button.btn-secondary { background: #0f3460; }
 .grid { display: grid; grid-template-columns: repeat(10, 1fr); width: 100%; max-width: 340px; background-color: #16213e; border: 2px solid #0f3460; aspect-ratio: 1; margin: 10px auto; }
 
 .cell {
-    border: 1px solid #0f3460; cursor: pointer; display: flex;
-    align-items: center; justify-content: center; font-size: 14px; user-select: none;
-    position: relative; overflow: hidden;
+    border: 1px solid #0f3460;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    user-select: none;
+    position: relative;
+    overflow: hidden;
 }
 
+/* GÖRSELLERİN ÖNE ÇIKMASI İÇİN BU KISMI EKLEYİN */
 .cell img.cell-icon {
-    width: 85%; height: 85%; object-fit: contain; pointer-events: none;
+    width: 80%;
+    height: 80%;
+    object-fit: contain;
+    pointer-events: none;
+    z-index: 2;
 }
 
 .cell.motor { background-color: #0f3460; }
