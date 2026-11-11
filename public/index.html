@@ -5,11 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Motor Battı 🏍️</title>
     <link rel="stylesheet" href="style.css">
+    <!-- Konfeti Kütüphanesi (Kavurma Kasırgası İçin) -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 </head>
 <body>
-    <!-- 1. GİRİŞ VE KAYIT EKRANI -->
+    <!-- GİRİŞ VE KAYIT -->
     <div id="auth-screen" class="screen active">
-        <h1>Motor Battı 🏍️</h1>
+        <h1 class="game-title">MOTOR BATTI 🏍️</h1>
         <div class="form-group">
             <input type="text" id="username" placeholder="Kullanıcı Adı" autocomplete="off">
             <input type="password" id="password" placeholder="Şifre">
@@ -20,20 +22,19 @@
         </div>
     </div>
 
-    <!-- 2. LOBİ VE MOD SEÇİMİ -->
+    <!-- LOBİ -->
     <div id="lobby-screen" class="screen">
         <div class="header-user">
             <h2 id="welcome-text"></h2>
-            <button onclick="logout()" class="btn-danger">Çıkış Yap 🚪</button>
+            <button onclick="logout()" class="btn-danger">Çıkış 🚪</button>
         </div>
         <div id="stats-panel"></div>
         
         <div class="form-group room-settings-box">
             <h3>Oda Kuralları Seçimi</h3>
-            
             <label>Filo Modu:</label>
             <select id="setting-fleet">
-                <option value="normal">Standart Filo (Kırmızı, L-Motokros, Scooter)</option>
+                <option value="normal">Standart Filo (Yarış, L-Motokros, Scooter)</option>
                 <option value="helmets">Kask & Tek Motor Modu (1 Motor + 4 Kask)</option>
             </select>
 
@@ -52,11 +53,11 @@
             </select>
 
             <input type="text" id="roomCode" placeholder="Oda Kodu Girin" autocomplete="off">
-            <button onclick="joinRoom()">Oda Kur / Katıl</button>
+            <button onclick="joinRoom()" class="btn-action">Oda Kur / Katıl 🚀</button>
         </div>
     </div>
 
-    <!-- 3. OYUN EKRANI -->
+    <!-- OYUN EKRANI -->
     <div id="game-screen" class="screen">
         <div class="mobile-tabs">
             <button class="tab-btn active" id="tab-my" onclick="manualSwitchTab('my-area')">Kendi Sahan</button>
@@ -66,14 +67,16 @@
         <div class="boards-container">
             <div id="my-area" class="board-section active-tab">
                 <h3>Senin Sahan</h3>
+                
+                <!-- MOBİL AKSİYON BAR (EKRANIN ÜSTÜNDE) -->
+                <div id="setup-action-bar" class="action-bar">
+                    <button id="btn-rotate" onclick="toggleRotation()">Yön: YATAY 🔄</button>
+                    <button id="btn-random" onclick="randomizeFleet()">Rastgele Diz 🎲</button>
+                </div>
+
                 <div id="my-board" class="grid"></div>
                 
-                <div id="motor-fleet">
-                    <h4>Filo Yerleştirme</h4>
-                    <button id="btn-rotate" onclick="toggleRotation()">Yön: YATAY 🔄</button>
-                    <div class="fleet-list" id="fleet-list-container"></div>
-                </div>
-                <button id="btn-ready" onclick="sendReady()" style="display: none;">SAVAŞA HAZIRIM 🚀</button>
+                <button id="btn-ready" onclick="sendReady()" class="btn-ready-glow">SAVAŞA HAZIRIM 🚀</button>
             </div>
 
             <div id="enemy-area" class="board-section">
@@ -90,7 +93,7 @@
             <p id="modal-message">Uyarı</p>
             <div id="modal-actions">
                 <button id="modal-btn-primary" onclick="closeModal()">Tamam</button>
-                <button id="modal-btn-secondary" style="display:none; background:#0f3460; margin-top:8px;">Vazgeç</button>
+                <button id="modal-btn-secondary" style="display:none;" class="btn-secondary">Vazgeç</button>
             </div>
         </div>
     </div>

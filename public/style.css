@@ -1,59 +1,105 @@
-* { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, sans-serif; }
-body { background-color: #1a1a2e; color: #e94560; text-align: center; padding: 15px; }
+* { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif; }
+
+/* YAPAY ZEKA HİSSİNİ YIKAN MAT CYBERPUNK PALET */
+body { 
+    background-color: #0b0f19; 
+    color: #f1f5f9; 
+    text-align: center; 
+    padding: 12px;
+}
 
 .screen { display: none; }
 .screen.active { display: block; }
 
-.header-user { display: flex; justify-content: space-between; align-items: center; max-width: 320px; margin: 0 auto 10px; }
+.game-title {
+    font-size: 2rem;
+    font-weight: 900;
+    color: #ff2a6d;
+    text-shadow: 0 0 15px rgba(255, 42, 109, 0.4);
+    margin-bottom: 20px;
+}
+
+.header-user { display: flex; justify-content: space-between; align-items: center; max-width: 340px; margin: 0 auto 10px; }
 .btn-danger { background: #d32f2f; padding: 6px 12px; font-size: 12px; }
 
-.form-group { max-width: 320px; margin: 15px auto; display: flex; flex-direction: column; gap: 10px; }
-.room-settings-box { background: #16213e; padding: 15px; border-radius: 8px; border: 1px solid #0f3460; text-align: left; }
-.room-settings-box label { font-size: 12px; color: #fff; margin-top: 5px; }
+.form-group { max-width: 340px; margin: 15px auto; display: flex; flex-direction: column; gap: 10px; }
+.room-settings-box { background: #121829; padding: 16px; border-radius: 12px; border: 1px solid #1e293b; text-align: left; }
+.room-settings-box label { font-size: 12px; color: #94a3b8; margin-top: 5px; }
 
 input, select {
-    padding: 10px; border-radius: 6px; border: 1px solid #0f3460;
-    background: #0f3460; color: white; font-size: 14px; text-align: center;
+    padding: 12px; border-radius: 8px; border: 1px solid #1e293b;
+    background: #0f172a; color: white; font-size: 14px; text-align: center; width: 100%;
 }
 
 .btn-group { display: flex; gap: 10px; }
-button { flex: 1; padding: 12px; background: #e94560; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
-button.btn-secondary { background: #0f3460; }
+button { flex: 1; padding: 12px; background: #ff2a6d; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 700; transition: transform 0.1s; }
+button:active { transform: scale(0.97); }
+button.btn-secondary { background: #1e293b; color: #cbd5e1; }
+button.btn-action { background: #05d9e8; color: #0f172a; font-weight: 800; }
 
-#btn-ready { width: 100%; margin-top: 15px; background: #4caf50; font-size: 16px; }
+.action-bar { display: flex; gap: 8px; justify-content: center; margin-bottom: 10px; max-width: 340px; margin-left: auto; margin-right: auto; }
+.action-bar button { padding: 8px 12px; font-size: 13px; background: #1e293b; color: #05d9e8; border: 1px solid #05d9e8; }
 
-.boards-container { display: flex; justify-content: center; gap: 30px; margin-top: 15px; }
+.btn-ready-glow { width: 100%; max-width: 340px; margin-top: 10px; background: #05d9e8; color: #051923; font-size: 16px; font-weight: 900; }
 
-/* GRID KARELERİNİ SABİTLEME */
+.boards-container { display: flex; justify-content: center; gap: 30px; margin-top: 5px; }
+
+/* GRID & SHAKE EFEKTİ */
 .grid { 
     display: grid; 
     grid-template-columns: repeat(10, 1fr); 
     grid-template-rows: repeat(10, 1fr);
     width: 100%; 
     max-width: 340px; 
-    background-color: #16213e; 
-    border: 2px solid #0f3460; 
+    background-color: #121829; 
+    border: 2px solid #1e293b; 
     aspect-ratio: 1; 
-    margin: 10px auto; 
+    margin: 5px auto; 
     position: relative;
+    border-radius: 8px;
+}
+
+.grid.shake {
+    animation: boardShake 0.3s cubic-bezier(.36,.07,.19,.97) both;
+}
+
+@keyframes boardShake {
+    10%, 90% { transform: translate3d(-2px, 0, 0); }
+    20%, 80% { transform: translate3d(3px, 0, 0); }
+    30%, 50%, 70% { transform: translate3d(-5px, 0, 0); }
+    40%, 60% { transform: translate3d(5px, 0, 0); }
 }
 
 .cell {
-    border: 1px solid #0f3460; 
+    border: 1px solid rgba(255, 255, 255, 0.05); 
     cursor: pointer; 
     display: flex;
     align-items: center; 
     justify-content: center; 
-    font-size: 14px; 
     user-select: none;
     position: relative;
 }
 
-.cell.motor { background-color: #0f3460; }
-.cell.hit { background-color: #8b0000 !important; }
-.cell.miss { background-color: #333 !important; }
+.cell.motor { background-color: rgba(5, 217, 232, 0.1); }
 
-/* BÜTÜN MOTOR GÖRSELİ KATMANI */
+/* VURUS ANIMASYONU VE ISKA */
+.cell.hit { 
+    background-color: rgba(255, 42, 109, 0.3) !important;
+    animation: hitPulse 0.4s ease-out;
+}
+.cell.hit::after {
+    content: "💥";
+    font-size: 16px;
+    animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.cell.miss { background-color: #1a202c !important; }
+.cell.miss::after { content: "❌"; font-size: 12px; opacity: 0.6; }
+
+@keyframes popIn { 0% { transform: scale(0); } 100% { transform: scale(1.2); } }
+@keyframes hitPulse { 0% { background-color: #ff2a6d; } 100% { background-color: rgba(255, 42, 109, 0.3); } }
+
+/* ESNEYEN TEK PARÇA MOTOR GÖRSELİ */
 .motor-overlay-img {
     position: absolute;
     top: 0;
@@ -61,25 +107,19 @@ button.btn-secondary { background: #0f3460; }
     pointer-events: none;
     z-index: 5;
     object-fit: contain;
-    transform-origin: center center;
 }
 
-#motor-fleet { background: #0f3460; padding: 12px; border-radius: 8px; margin-top: 10px; color: white; }
-.motor-item { background: #16213e; padding: 10px; margin: 6px 0; border-radius: 5px; cursor: pointer; border: 2px solid transparent; text-align: left; display: flex; align-items: center; gap: 10px; }
-.motor-item img { width: 28px; height: 28px; object-fit: contain; }
-.motor-item.selected { border-color: #e94560; }
-
-.shots-badge { background: #0f3460; color: #fff; padding: 6px 12px; border-radius: 20px; display: inline-block; margin-bottom: 8px; font-weight: bold; }
+.shots-badge { background: #1e293b; color: #05d9e8; padding: 6px 14px; border-radius: 20px; display: inline-block; margin-bottom: 8px; font-weight: bold; border: 1px solid #05d9e8; }
 
 .mobile-tabs { display: none; margin-bottom: 10px; }
-.tab-btn { background: #0f3460; }
-.tab-btn.active { background: #e94560; }
+.tab-btn { background: #121829; color: #94a3b8; }
+.tab-btn.active { background: #ff2a6d; color: white; }
 
 /* MODAL POP-UP */
-.modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.75); z-index: 1000; justify-content: center; align-items: center; }
+.modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 1000; justify-content: center; align-items: center; }
 .modal-overlay.active { display: flex; }
-.modal-content { background: #16213e; border: 2px solid #e94560; padding: 25px; border-radius: 12px; max-width: 320px; width: 85%; color: white; box-shadow: 0 10px 30px rgba(0,0,0,0.6); }
-.modal-content p { font-size: 16px; margin-bottom: 20px; line-height: 1.4; }
+.modal-content { background: #121829; border: 2px solid #ff2a6d; padding: 25px; border-radius: 16px; max-width: 320px; width: 88%; color: white; box-shadow: 0 10px 30px rgba(255, 42, 109, 0.3); }
+.modal-content p { font-size: 16px; margin-bottom: 20px; line-height: 1.4; font-weight: 600; }
 
 @media (max-width: 768px) {
     .boards-container { flex-direction: column; gap: 0; }
