@@ -9,7 +9,8 @@ let activeSettings = {};
 let inventory = {};
 let selectedMotorType = null;
 let selectedMotorSize = 0;
-let lOrientation = 0; // Mavi motor için 2x2 L biçimi
+let isHorizontal = true;
+let lOrientation = 0; // 0: ┌, 1: ┐, 2: └, 3: ┘
 let placedMotors = [];
 
 const MOTOR_IMAGES = {
@@ -117,9 +118,9 @@ socket.on('gameStart', (data) => {
     setupFleetSelectorBar();
 });
 
-// ALT KISIMDA YAN YANA DURAN SEÇİM ŞERİDİ
 function setupFleetSelectorBar() {
     createBoard('my-board', handleMyBoardClick);
+    createBoard('enemy-board', handleEnemyBoardClick);
     placedMotors = [];
     myHitsTaken = 0;
 
@@ -172,6 +173,27 @@ function selectFleetCard(type, size, element) {
     selectedMotorSize = size;
     document.querySelectorAll('.fleet-card').forEach(c => c.classList.remove('selected'));
     element.classList.add('selected');
+
+    if (type === 'motocross') {
+        updateRotationButtonText();
+    } else {
+        document.getElementById('btn-rotate').innerText = isHorizontal ? "Yön: YATAY 🔄" : "Yön: DİKEY 🔄";
+    }
+}
+
+function toggleRotation() {
+    if (selectedMotorType === 'motocross') {
+        lOrientation = (lOrientation + 1) % 4;
+        updateRotationButtonText();
+    } else {
+        isHorizontal = !isHorizontal;
+        document.getElementById('btn-rotate').innerText = isHorizontal ? "Yön: YATAY 🔄" : "Yön: DİKEY 🔄";
+    }
+}
+
+function updateRotationButtonText() {
+    const lShapes = ["┌ (Aşağı-Sağ)", "┐ (Aşağı-Sol)", "└ (Yukarı-Sağ)", "┘ (Yukarı-Sol)"];
+    document.getElementById('btn-rotate').innerText = `L Yönü: ${lShapes[lOrientation]} 🔄`;
 }
 
 function handleMyBoardClick(index) {
@@ -179,50 +201,55 @@ function handleMyBoardClick(index) {
         return showModal("Lütfen önce aşağıdan bir motor seçin!");
     }
 
-    const cellsToOccupy = calculateCellsToOccupy(selectedMotorType, index);
-    if (!cellsToOccupy) return showModal("Motor dışarı taşıyor!");
+    const cellsToOccupy = calculateCellsToOccupy(index);
+    if (!cellsToOccupy) return showModal("Motor tahtadan dışarı taşıyor!");
 
     const boardCells = document.getElementById('my-board').children;
 
     for (let cellIndex of cellsToOccupy) {
         if (boardCells[cellIndex].classList.contains('motor')) {
-            return showModal("Üst üste motor koyamazsınız!");
+            return showModal("Üst üste motor yerleştiremezsiniz!");
         }
     }
 
-    // Mantıksal Hücre İçi İşaretleme
-    cellsToOccupy.forEach(cellIndex => boardCells[cellIndex].classList.add('motor'));
-
-    const firstCell = boardCells[index];
-    const container = document.createElement('div');
-    container.classList.add('motor-overlay-container');
-
-    // 1. KIRMIZI MOTOR (2x2 Alana Peş Peşe 2 Kırmızı Motor)
-    if (selectedMotorType === 'motorbike' || selectedMotorType === 'main_motor') {
-        container.classList.add('double-red');
-        container.innerHTML = `
-            <img src="${MOTOR_IMAGES.motorbike}">
-            <img src="${MOTOR_IMAGES.motorbike}">
-        `;
-    } 
-    // 2. MAVİ / MOTOKROS (Alt iki karesi + Sağ Üst Karesi - 2x2 L Yapısı)
-    else if (selectedMotorType === 'motocross' || selectedMotorType === 'scooter') {
-        container.classList.add('single-icon');
-        const img = document.createElement('img');
-        img.src = MOTOR_IMAGES[selectedMotorType];
-        container.appendChild(img);
-    } 
-    // 3. KASK (1x1)
-    else {
-        container.style.width = '100%';
-        container.style.height = '100%';
-        const img = document.createElement('img');
-        img.src = MOTOR_IMAGES.helmet;
-        img.style.width = '100%';
-        container.appendChild(img);
+    if (activeSettings.touchMode === 'degmesin') {
+        for (let cellIndex of cellsToOccupy) {
+            if (hasAdjacentMotor(boardCells, cellIndex, cellsToOccupy)) {
+                return showModal("Değmesin modu aktif! Etrafı boş kalmalı.");
+            }
+        }
     }
 
-    firstCell.appendChild(container);
+    cellsToOccupy.forEach(cellIndex => boardCells[cellIndex].classList.add('motor'));
+
+    // BÜTÜN RESMİ ALANA ESNETEREK YAYMA
+    const firstCell = boardCells[index];
+    const img = document.createElement('img');
+    img.src = MOTOR_IMAGES[selectedMotorType];
+    img.classList.add('motor-overlay-img');
+
+    if (selectedMotorType === 'motocross') {
+        img.style.width = '200%';
+        img.style.height = '200%';
+        const rotations = [0, 90, 270, 180];
+        img.style.transform = `rotate(${rotations[lOrientation]}deg)`;
+    } else if (selectedMotorType === 'helmet') {
+        img.style.width = '100%';
+        img.style.height = '100%';
+    } else {
+        // KIRMIZI MOTOR VE SCOOTER (4 VEYA 2 KARE TEK PARÇA ESNEME)
+        if (isHorizontal) {
+            img.style.width = `${selectedMotorSize * 100}%`;
+            img.style.height = '100%';
+        } else {
+            img.style.width = `${selectedMotorSize * 100}%`;
+            img.style.height = '100%';
+            img.style.transformOrigin = 'top left';
+            img.style.transform = `rotate(90deg) translateY(-100%)`;
+        }
+    }
+
+    firstCell.appendChild(img);
     placedMotors.push({ type: selectedMotorType, cells: [...cellsToOccupy], hits: 0 });
 
     inventory[selectedMotorType]--;
@@ -239,40 +266,71 @@ function handleMyBoardClick(index) {
     }
 }
 
-// 2x2 ALAN KANUNU (Kırmızı için 2x2 Blok, Mavi L için Alt iki + Sağ üst)
-function calculateCellsToOccupy(type, index) {
+function calculateCellsToOccupy(index) {
     const row = Math.floor(index / 10);
     const col = index % 10;
     const cells = [];
 
-    if (type === 'motorbike' || type === 'main_motor') {
-        // 2x2 Kare Blok (4 Birim)
-        if (col + 1 >= 10 || row + 1 >= 10) return null;
-        cells.push(index, index + 1, index + 10, index + 11);
-    } else if (type === 'motocross' || type === 'scooter') {
-        // Alt İki Kare + Sağ Üst Kare L Şekli (3 Birim)
-        if (col + 1 >= 10 || row + 1 >= 10) return null;
-        cells.push(index + 10, index + 11, index + 1); // Sol alt, Sağ alt, Sağ üst
+    if (selectedMotorType === 'motocross') {
+        if (lOrientation === 0) {
+            if (col + 1 >= 10 || row + 1 >= 10) return null;
+            cells.push(index, index + 1, index + 10);
+        } else if (lOrientation === 1) {
+            if (col - 1 < 0 || row + 1 >= 10) return null;
+            cells.push(index, index - 1, index + 10);
+        } else if (lOrientation === 2) {
+            if (col + 1 >= 10 || row - 1 < 0) return null;
+            cells.push(index, index + 1, index - 10);
+        } else if (lOrientation === 3) {
+            if (col - 1 < 0 || row - 1 < 0) return null;
+            cells.push(index, index - 1, index - 10);
+        }
     } else {
-        // 1x1 Kask
-        cells.push(index);
+        for (let i = 0; i < selectedMotorSize; i++) {
+            if (isHorizontal) {
+                if (col + i >= 10) return null;
+                cells.push(index + i);
+            } else {
+                if (row + i >= 10) return null;
+                cells.push(index + (i * 10));
+            }
+        }
     }
     return cells;
 }
 
-function randomizeFleet() {
-    setupFleetSelectorBar();
-    showModal("Tüm motorlar sıfırlandı! Aşağıdan seçip dizebilirsin. 🎲");
+function hasAdjacentMotor(boardCells, index, currentPlacingCells) {
+    const row = Math.floor(index / 10);
+    const col = index % 10;
+    for (let dr = -1; dr <= 1; dr++) {
+        for (let dc = -1; dc <= 1; dc++) {
+            const r = row + dr;
+            const c = col + dc;
+            if (r >= 0 && r < 10 && c >= 0 && c < 10) {
+                const checkIdx = r * 10 + c;
+                if (!currentPlacingCells.includes(checkIdx) && boardCells[checkIdx].classList.contains('motor')) {
+                    return true;
+                }
+            }
+        }
+    }
+    return false;
 }
 
 function manualSwitchTab(tabId) { switchTab(tabId); }
 
 function switchTab(tabId) {
-    document.querySelectorAll('.board-section').forEach(s => s.classList.remove('active-tab'));
+    document.querySelectorAll('.board-section').forEach(s => {
+        s.classList.remove('active-tab');
+        s.style.display = 'none';
+    });
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
     
     const targetSection = document.getElementById(tabId);
-    if (targetSection) targetSection.classList.add('active-tab');
+    if (targetSection) {
+        targetSection.classList.add('active-tab');
+        targetSection.style.display = 'block';
+    }
 
     if (tabId === 'my-area') document.getElementById('tab-my').classList.add('active');
     else document.getElementById('tab-enemy').classList.add('active');
