@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <!-- 1. GİRİŞ VE KAYIT EKRANI -->
+    <!-- 1. GİRİŞ VE KAYIT -->
     <div id="auth-screen" class="screen active">
         <h1>Motor Battı 🏍️</h1>
         <div class="form-group">
@@ -20,55 +20,72 @@
         </div>
     </div>
 
-    <!-- 2. LOBİ EKRANI -->
+    <!-- 2. LOBİ VE MOD SEÇİMİ -->
     <div id="lobby-screen" class="screen">
         <h2 id="welcome-text"></h2>
         <div id="stats-panel"></div>
-        <div class="form-group">
+        
+        <div class="form-group room-settings-box">
+            <h3>Oda Kuralları Seçimi</h3>
+            
+            <label>Filo Modu:</label>
+            <select id="setting-fleet">
+                <option value="normal">Standart Motorlar (4'lü, 3'lü, 2'li)</option>
+                <option value="helmets">Kask & Tek Motor Modu (1 Motor + 4 Kask)</option>
+            </select>
+
+            <label>Bitişiklik Kuralı:</label>
+            <select id="setting-touch">
+                <option value="degsin">Değsin (Serbest Yerleşim)</option>
+                <option value="degmesin">Değmesin (Etrafı Boş Kalacak)</option>
+            </select>
+
+            <label>Atış Modu:</label>
+            <select id="setting-shot">
+                <option value="combo">Seri Vuruş (Vurdukça Atış Hakkı)</option>
+                <option value="fleetCount">Filo Gücü (Ayaktaki Motor Sayısı Kadar)</option>
+                <option value="fixed3">Sabit 3 Atış</option>
+                <option value="fixed6">Sabit 6 Atış</option>
+            </select>
+
             <input type="text" id="roomCode" placeholder="Oda Kodu Girin" autocomplete="off">
-            <button onclick="joinRoom()">Odaya Katıl</button>
+            <button onclick="joinRoom()">Oda Kur / Katıl</button>
         </div>
     </div>
 
     <!-- 3. OYUN EKRANI -->
     <div id="game-screen" class="screen">
-        
-        <!-- Mobil Sekmeler -->
         <div class="mobile-tabs">
-            <button class="tab-btn active" onclick="switchTab('my-area')">Kendi Sahan</button>
-            <button class="tab-btn" onclick="switchTab('enemy-area')">Rakip Saha</button>
+            <button class="tab-btn active" id="tab-my" onclick="manualSwitchTab('my-area')">Kendi Sahan</button>
+            <button class="tab-btn" id="tab-enemy" onclick="manualSwitchTab('enemy-area')">Rakip Saha</button>
         </div>
 
         <div class="boards-container">
-            <!-- KENDİ SAHAN -->
             <div id="my-area" class="board-section active-tab">
                 <h3>Senin Sahan</h3>
                 <div id="my-board" class="grid"></div>
                 
                 <div id="motor-fleet">
-                    <h4>Motorunu Seç ve Tahtaya Dokun</h4>
+                    <h4>Motor Seç ve Yerleştir</h4>
                     <button id="btn-rotate" onclick="toggleRotation()">Yön: YATAY 🔄</button>
-                    
-                    <div class="fleet-list">
-                        <div class="motor-item" onclick="selectMotor('cruiser', 4)">
-                            🏍️ Cruiser (4 Birim) - Kalan: <span id="count-cruiser">1</span>
-                        </div>
-                        <div class="motor-item" onclick="selectMotor('chopper', 3)">
-                            🛵 Chopper (3 Birim) - Kalan: <span id="count-chopper">2</span>
-                        </div>
-                        <div class="motor-item" onclick="selectMotor('scooter', 2)">
-                            🛴 Scooter (2 Birim) - Kalan: <span id="count-scooter">3</span>
-                        </div>
-                    </div>
+                    <div class="fleet-list" id="fleet-list-container"></div>
                 </div>
                 <button id="btn-ready" onclick="sendReady()" style="display: none;">SAVAŞA HAZIRIM 🚀</button>
             </div>
 
-            <!-- RAKİP SAHA -->
             <div id="enemy-area" class="board-section">
-                <h3 id="turn-indicator">Rakip Saha (Ateş Et)</h3>
+                <h3 id="turn-indicator">Rakip Saha</h3>
+                <div id="shots-left-badge" class="shots-badge">Kalan Atış: -</div>
                 <div id="enemy-board" class="grid"></div>
             </div>
+        </div>
+    </div>
+
+    <!-- SİTE İÇİ MODAL POP-UP -->
+    <div id="custom-modal" class="modal-overlay">
+        <div class="modal-content">
+            <p id="modal-message">Uyarı</p>
+            <button onclick="closeModal()">Tamam</button>
         </div>
     </div>
 
