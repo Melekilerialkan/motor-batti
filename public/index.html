@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Motor Battı 🏍️</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- 1. GİRİŞ VE KAYIT EKRANI -->
+    <div id="auth-screen" class="screen active">
+        <h1>Motor Battı 🏍️</h1>
+        <div class="form-group">
+            <input type="text" id="username" placeholder="Kullanıcı Adı" autocomplete="off">
+            <input type="password" id="password" placeholder="Şifre">
+            <div class="btn-group">
+                <button onclick="login()">Giriş Yap</button>
+                <button onclick="register()" class="btn-secondary">Kayıt Ol</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. LOBİ EKRANI -->
+    <div id="lobby-screen" class="screen">
+        <h2 id="welcome-text"></h2>
+        <div id="stats-panel"></div>
+        <div class="form-group">
+            <input type="text" id="roomCode" placeholder="Oda Kodu Girin" autocomplete="off">
+            <button onclick="joinRoom()">Odaya Katıl</button>
+        </div>
+    </div>
+
+    <!-- 3. OYUN EKRANI -->
+    <div id="game-screen" class="screen">
+        
+        <!-- Mobil Sekmeler -->
+        <div class="mobile-tabs">
+            <button class="tab-btn active" onclick="switchTab('my-area')">Kendi Sahan</button>
+            <button class="tab-btn" onclick="switchTab('enemy-area')">Rakip Saha</button>
+        </div>
+
+        <div class="boards-container">
+            <!-- KENDİ SAHAN -->
+            <div id="my-area" class="board-section active-tab">
+                <h3>Senin Sahan</h3>
+                <div id="my-board" class="grid"></div>
+                
+                <div id="motor-fleet">
+                    <h4>Motorunu Seç ve Tahtaya Dokun</h4>
+                    <button id="btn-rotate" onclick="toggleRotation()">Yön: YATAY 🔄</button>
+                    
+                    <div class="fleet-list">
+                        <div class="motor-item" onclick="selectMotor('cruiser', 4)">
+                            🏍️ Cruiser (4 Birim) - Kalan: <span id="count-cruiser">1</span>
+                        </div>
+                        <div class="motor-item" onclick="selectMotor('chopper', 3)">
+                            🛵 Chopper (3 Birim) - Kalan: <span id="count-chopper">2</span>
+                        </div>
+                        <div class="motor-item" onclick="selectMotor('scooter', 2)">
+                            🛴 Scooter (2 Birim) - Kalan: <span id="count-scooter">3</span>
+                        </div>
+                    </div>
+                </div>
+                <button id="btn-ready" onclick="sendReady()" style="display: none;">SAVAŞA HAZIRIM 🚀</button>
+            </div>
+
+            <!-- RAKİP SAHA -->
+            <div id="enemy-area" class="board-section">
+                <h3 id="turn-indicator">Rakip Saha (Ateş Et)</h3>
+                <div id="enemy-board" class="grid"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

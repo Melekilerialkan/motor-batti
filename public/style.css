@@ -1,0 +1,122 @@
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+    background-color: #1a1a2e;
+    color: #e94560;
+    text-align: center;
+    padding: 15px;
+}
+
+.screen { display: none; }
+.screen.active { display: block; }
+
+.form-group {
+    max-width: 300px;
+    margin: 20px auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+input {
+    padding: 12px;
+    border-radius: 6px;
+    border: 1px solid #0f3460;
+    background: #16213e;
+    color: white;
+    font-size: 14px;
+    text-align: center;
+}
+
+.btn-group {
+    display: flex;
+    gap: 10px;
+}
+
+button {
+    flex: 1;
+    padding: 12px;
+    background: #e94560;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+button.btn-secondary { background: #0f3460; }
+
+#btn-ready { 
+    width: 100%; 
+    margin-top: 15px; 
+    background: #4caf50; 
+    font-size: 16px; 
+}
+
+.boards-container {
+    display: flex;
+    justify-content: center;
+    gap: 30px;
+    margin-top: 15px;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(10, 1fr);
+    width: 100%;
+    max-width: 340px;
+    background-color: #16213e;
+    border: 2px solid #0f3460;
+    aspect-ratio: 1;
+    margin: 10px auto;
+}
+
+.cell {
+    border: 1px solid #0f3460;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    user-select: none;
+}
+
+.cell.motor { background-color: #0f3460; }
+.cell.hit { background-color: #8b0000 !important; }
+.cell.miss { background-color: #333 !important; }
+
+#motor-fleet {
+    background: #0f3460;
+    padding: 12px;
+    border-radius: 8px;
+    margin-top: 10px;
+    color: white;
+}
+
+.motor-item {
+    background: #16213e;
+    padding: 10px;
+    margin: 6px 0;
+    border-radius: 5px;
+    cursor: pointer;
+    border: 2px solid transparent;
+}
+
+.motor-item.selected { border-color: #e94560; }
+
+.mobile-tabs { display: none; margin-bottom: 10px; }
+.tab-btn { background: #0f3460; }
+.tab-btn.active { background: #e94560; }
+
+@media (max-width: 768px) {
+    .boards-container { flex-direction: column; gap: 0; }
+    .mobile-tabs { display: flex; gap: 10px; }
+    .board-section { display: none; }
+    .board-section.active-tab { display: block; width: 100%; }
+    .grid { max-width: 88vw; }
+}
