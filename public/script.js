@@ -7,12 +7,11 @@ let totalPartsToWin = 0;
 let activeSettings = {};
 
 let inventory = {};
-let motorSizeMap = {};
 let selectedMotorType = null;
 let selectedMotorSize = 0;
 
 let isHorizontal = true;
-let lOrientation = 0; // L motorunun 4 farklı yönü (0: ┌, 1: ┐, 2: └, 3: ┘)
+let lOrientation = 0; // 0: ┌, 1: ┐, 2: └, 3: ┘
 let modalCallback = null;
 
 let placedMotors = [];
@@ -31,7 +30,6 @@ document.addEventListener('DOMContentLoaded', () => {
     checkAutoLogin();
 });
 
-// 1. OTURUM SAKLAMA (localStorage)
 function checkAutoLogin() {
     const savedUser = localStorage.getItem('motor_batti_user');
     if (savedUser) {
@@ -199,13 +197,12 @@ function updateRotationButtonText() {
     document.getElementById('btn-rotate').innerText = `L Yönü: ${lShapes[lOrientation]} 🔄`;
 }
 
-// L ŞEKLİ VE DÜZ MOTOR HESAPLAMA HÜCRELERİ
 function calculateCellsToOccupy(index) {
     const row = Math.floor(index / 10);
     const col = index % 10;
     const cells = [];
 
-    if (selectedMotorType === 'motocross') { // L-Şekli Motokros
+    if (selectedMotorType === 'motocross') {
         if (lOrientation === 0) { // ┌
             if (col + 1 >= 10 || row + 1 >= 10) return null;
             cells.push(index, index + 1, index + 10);
@@ -219,7 +216,7 @@ function calculateCellsToOccupy(index) {
             if (col - 1 < 0 || row - 1 < 0) return null;
             cells.push(index, index - 1, index - 10);
         }
-    } else { // Standart Düz Motorlar
+    } else {
         for (let i = 0; i < selectedMotorSize; i++) {
             if (isHorizontal) {
                 if (col + i >= 10) return null;
@@ -257,15 +254,39 @@ function handleMyBoardClick(index) {
         }
     }
 
-    // Görsel Ekleme
-    cellsToOccupy.forEach(cellIndex => {
-        const cell = boardCells[cellIndex];
-        cell.classList.add('motor');
-        const img = document.createElement('img');
-        img.src = MOTOR_IMAGES[selectedMotorType];
-        img.classList.add('cell-icon');
-        cell.appendChild(img);
-    });
+    // 1. Mantıksal hücreleri işaretle
+    cellsToOccupy.forEach(cellIndex => boardCells[cellIndex].classList.add('motor'));
+
+    // 2. BÜTÜN RESMİ ALANA YAYMA
+    const firstCell = boardCells[index];
+    const img = document.createElement('img');
+    img.src = MOTOR_IMAGES[selectedMotorType];
+    img.classList.add('motor-overlay-img');
+
+    if (selectedMotorType === 'motocross') {
+        // L-Motokros 2x2 alan kaplar
+        img.style.width = '200%';
+        img.style.height = '200%';
+        const rotations = [0, 90, 270, 180];
+        img.style.transform = `rotate(${rotations[lOrientation]}deg)`;
+    } else if (selectedMotorType === 'helmet') {
+        // 1x1 Kask
+        img.style.width = '100%';
+        img.style.height = '100%';
+    } else {
+        // Düz Motorlar (4 birim Kırmızı Motor veya 2-3 birim Scooter)
+        if (isHorizontal) {
+            img.style.width = `${selectedMotorSize * 100}%`;
+            img.style.height = '100%';
+        } else {
+            img.style.width = `${selectedMotorSize * 100}%`;
+            img.style.height = '100%';
+            img.style.transformOrigin = 'top left';
+            img.style.transform = `rotate(90deg) translateY(-100%)`;
+        }
+    }
+
+    firstCell.appendChild(img);
 
     placedMotors.push({ type: selectedMotorType, cells: [...cellsToOccupy], hits: 0 });
 
@@ -386,7 +407,6 @@ socket.on('updateBoard', (data) => {
     }
 });
 
-// OYUN BİTİŞİ VE RÖVANŞ EKRANI
 socket.on('gameEnded', (data) => {
     showModal(
         `Oyun Bitti! Kazanan: ${data.winner} 🏆`, 
