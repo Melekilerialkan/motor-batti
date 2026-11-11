@@ -10,7 +10,7 @@ let inventory = {};
 let selectedMotorType = null;
 let selectedMotorSize = 0;
 let isHorizontal = true;
-let lOrientation = 0; // 0: ┌, 1: ┐, 2: └, 3: ┘
+let lOrientation = 0; 
 let placedMotors = [];
 
 const MOTOR_IMAGES = {
@@ -222,7 +222,6 @@ function handleMyBoardClick(index) {
 
     cellsToOccupy.forEach(cellIndex => boardCells[cellIndex].classList.add('motor'));
 
-    // BÜTÜN RESMİ ALANA ESNETEREK YAYMA
     const firstCell = boardCells[index];
     const img = document.createElement('img');
     img.src = MOTOR_IMAGES[selectedMotorType];
@@ -237,7 +236,6 @@ function handleMyBoardClick(index) {
         img.style.width = '100%';
         img.style.height = '100%';
     } else {
-        // KIRMIZI MOTOR VE SCOOTER (4 VEYA 2 KARE TEK PARÇA ESNEME)
         if (isHorizontal) {
             img.style.width = `${selectedMotorSize * 100}%`;
             img.style.height = '100%';
@@ -319,21 +317,24 @@ function hasAdjacentMotor(boardCells, index, currentPlacingCells) {
 
 function manualSwitchTab(tabId) { switchTab(tabId); }
 
+// ÇAKIŞMAYI KESİN ENGELLEYEN SEKME FONKSİYONU
 function switchTab(tabId) {
-    document.querySelectorAll('.board-section').forEach(s => {
-        s.classList.remove('active-tab');
-        s.style.display = 'none';
-    });
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    
-    const targetSection = document.getElementById(tabId);
-    if (targetSection) {
-        targetSection.classList.add('active-tab');
-        targetSection.style.display = 'block';
-    }
+    const myArea = document.getElementById('my-area');
+    const enemyArea = document.getElementById('enemy-area');
+    const tabMyBtn = document.getElementById('tab-my');
+    const tabEnemyBtn = document.getElementById('tab-enemy');
 
-    if (tabId === 'my-area') document.getElementById('tab-my').classList.add('active');
-    else document.getElementById('tab-enemy').classList.add('active');
+    if (tabId === 'my-area') {
+        myArea.classList.add('active-tab');
+        enemyArea.classList.remove('active-tab');
+        tabMyBtn.classList.add('active');
+        tabEnemyBtn.classList.remove('active');
+    } else {
+        enemyArea.classList.add('active-tab');
+        myArea.classList.remove('active-tab');
+        tabEnemyBtn.classList.add('active');
+        tabMyBtn.classList.remove('active');
+    }
 }
 
 function sendReady() {
