@@ -9,6 +9,7 @@ let activeSettings = {};
 let inventory = {};
 let selectedMotorType = null;
 let selectedMotorSize = 0;
+let selectedMotorIndexToMove = null;
 let isHorizontal = true;
 let lOrientation = 0; 
 let placedMotors = [];
@@ -114,7 +115,6 @@ socket.on('gameStart', (data) => {
     showModal(data.message);
     activeSettings = data.settings;
     switchScreen('game-screen');
-    switchTab('my-area');
     setupFleetSelectorBar();
 });
 
@@ -123,6 +123,7 @@ function setupFleetSelectorBar() {
     createBoard('enemy-board', handleEnemyBoardClick);
     placedMotors = [];
     myHitsTaken = 0;
+    selectedMotorIndexToMove = null;
 
     let barHTML = "";
     if (activeSettings.fleetMode === 'helmets') {
@@ -171,6 +172,7 @@ function selectFleetCard(type, size, element) {
     if (inventory[type] <= 0) return showModal("Bu motordan kalmadı!");
     selectedMotorType = type;
     selectedMotorSize = size;
+    selectedMotorIndexToMove = null;
     document.querySelectorAll('.fleet-card').forEach(c => c.classList.remove('selected'));
     element.classList.add('selected');
 
@@ -196,15 +198,38 @@ function updateRotationButtonText() {
     document.getElementById('btn-rotate').innerText = `L Yönü: ${lShapes[lOrientation]} 🔄`;
 }
 
+// TAHTADAKİ MOTORU SEÇİP TAŞIMA VE DİZME MANTIĞI
 function handleMyBoardClick(index) {
+    const boardCells = document.getElementById('my-board').children;
+
+    // 1. Zaten konulmuş bir motora tıklandıysa onu kaldırmak/taşımak için seç
+    const existingIndex = placedMotors.findIndex(m => m.cells.includes(index));
+    if (existingIndex !== -1 && !selectedMotorType) {
+        selectedMotorIndexToMove = existingIndex;
+        const motorToMove = placedMotors[existingIndex];
+        selectedMotorType = motorToMove.type;
+        selectedMotorSize = motorToMove.size;
+        
+        // Eski görselleri temizle
+        motorToMove.cells.forEach(c => {
+            boardCells[c].classList.remove('motor');
+            boardCells[c].innerHTML = '';
+        });
+
+        placedMotors.splice(existingIndex, 1);
+        inventory[selectedMotorType]++;
+        document.getElementById(`count-${selectedMotorType}`).innerText = `x${inventory[selectedMotorType]}`;
+        showModal("Motor serbest bırakıldı! Yerleştirmek istediğin yeni boş kareye tıkla.");
+        return;
+    }
+
+    // 2. Motor seçiliyken boş kareye yerleştir
     if (!selectedMotorType || inventory[selectedMotorType] <= 0) {
         return showModal("Lütfen önce aşağıdan bir motor seçin!");
     }
 
     const cellsToOccupy = calculateCellsToOccupy(index);
     if (!cellsToOccupy) return showModal("Motor tahtadan dışarı taşıyor!");
-
-    const boardCells = document.getElementById('my-board').children;
 
     for (let cellIndex of cellsToOccupy) {
         if (boardCells[cellIndex].classList.contains('motor')) {
@@ -248,7 +273,15 @@ function handleMyBoardClick(index) {
     }
 
     firstCell.appendChild(img);
-    placedMotors.push({ type: selectedMotorType, cells: [...cellsToOccupy], hits: 0 });
+    placedMotors.push({ 
+        type: selectedMotorType, 
+        size: selectedMotorSize,
+        startIndex: index,
+        isHorizontal: isHorizontal,
+        lOrientation: lOrientation,
+        cells: [...cellsToOccupy], 
+        hits: 0 
+    });
 
     inventory[selectedMotorType]--;
     document.getElementById(`count-${selectedMotorType}`).innerText = `x${inventory[selectedMotorType]}`;
@@ -262,6 +295,81 @@ function handleMyBoardClick(index) {
     if (totalLeft === 0) {
         document.getElementById('btn-ready').style.display = 'block';
     }
+}
+
+// RASTGELE DİZME BUTONU (SIFIRLAYIP RASTGELE YERLEŞTİRME)
+function randomizeFleet() {
+    setupFleetSelectorBar();
+    const boardCells = document.getElementById('my-board').children;
+
+    const typesToPlace = activeSettings.fleetMode === 'helmets' 
+        ? [{type:'main_motor', size:3}, {type:'helmet', size:1}, {type:'helmet', size:1}, {type:'helmet', size:1}, {type:'helmet', size:1}]
+        : [{type:'motorbike', size:4}, {type:'motocross', size:3}, {type:'motocross', size:3}, {type:'scooter', size:2}, {type:'scooter', size:2}, {type:'scooter', size:2}];
+
+    for (let item of typesToPlace) {
+        let placed = false;
+        let attempts = 0;
+        while (!placed && attempts < 200) {
+            attempts++;
+            const randIndex = Math.floor(Math.random() * 100);
+            selectedMotorType = item.type;
+            selectedMotorSize = item.size;
+            isHorizontal = Math.random() < 0.5;
+            lOrientation = Math.floor(Math.random() * 4);
+
+            const cellsToOccupy = calculateCellsToOccupy(randIndex);
+            if (!cellsToOccupy) continue;
+
+            let conflict = false;
+            for (let cIdx of cellsToOccupy) {
+                if (boardCells[cIdx].classList.contains('motor')) conflict = true;
+            }
+
+            if (activeSettings.touchMode === 'degmesin' && !conflict) {
+                for (let cIdx of cellsToOccupy) {
+                    if (hasAdjacentMotor(boardCells, cIdx, cellsToOccupy)) conflict = true;
+                }
+            }
+
+            if (!conflict) {
+                cellsToOccupy.forEach(cIdx => boardCells[cIdx].classList.add('motor'));
+                const firstCell = boardCells[randIndex];
+                const img = document.createElement('img');
+                img.src = MOTOR_IMAGES[selectedMotorType];
+                img.classList.add('motor-overlay-img');
+
+                if (selectedMotorType === 'motocross') {
+                    img.style.width = '200%'; img.style.height = '200%';
+                    const rotations = [0, 90, 270, 180];
+                    img.style.transform = `rotate(${rotations[lOrientation]}deg)`;
+                } else if (selectedMotorType === 'helmet') {
+                    img.style.width = '100%'; img.style.height = '100%';
+                } else {
+                    if (isHorizontal) {
+                        img.style.width = `${selectedMotorSize * 100}%`; img.style.height = '100%';
+                    } else {
+                        img.style.width = `${selectedMotorSize * 100}%`; img.style.height = '100%';
+                        img.style.transformOrigin = 'top left';
+                        img.style.transform = `rotate(90deg) translateY(-100%)`;
+                    }
+                }
+
+                firstCell.appendChild(img);
+                placedMotors.push({ type: selectedMotorType, size: selectedMotorSize, cells: [...cellsToOccupy], hits: 0 });
+                inventory[selectedMotorType]--;
+                placed = true;
+            }
+        }
+    }
+
+    Object.keys(inventory).forEach(k => {
+        const el = document.getElementById(`count-${k}`);
+        if (el) el.innerText = `x${inventory[k]}`;
+    });
+
+    selectedMotorType = null;
+    document.getElementById('btn-ready').style.display = 'block';
+    showModal("Tüm motorlar tahtaya rastgele dizildi! 🎲");
 }
 
 function calculateCellsToOccupy(index) {
@@ -315,30 +423,8 @@ function hasAdjacentMotor(boardCells, index, currentPlacingCells) {
     return false;
 }
 
-function manualSwitchTab(tabId) { switchTab(tabId); }
-
-// ÇAKIŞMAYI KESİN ENGELLEYEN SEKME FONKSİYONU
-function switchTab(tabId) {
-    const myArea = document.getElementById('my-area');
-    const enemyArea = document.getElementById('enemy-area');
-    const tabMyBtn = document.getElementById('tab-my');
-    const tabEnemyBtn = document.getElementById('tab-enemy');
-
-    if (tabId === 'my-area') {
-        myArea.classList.add('active-tab');
-        enemyArea.classList.remove('active-tab');
-        tabMyBtn.classList.add('active');
-        tabEnemyBtn.classList.remove('active');
-    } else {
-        enemyArea.classList.add('active-tab');
-        myArea.classList.remove('active-tab');
-        tabEnemyBtn.classList.add('active');
-        tabMyBtn.classList.remove('active');
-    }
-}
-
 function sendReady() {
-    socket.emit('playerReady', { roomCode: currentRoom, motorCount: placedMotors.length });
+    socket.emit('playerReady', { roomCode: currentRoom, motorCount: placedMotors.length, motors: placedMotors });
     document.getElementById('btn-ready').innerText = "RAKİP BEKLENİYOR...";
     document.getElementById('btn-ready').disabled = true;
 }
@@ -364,13 +450,11 @@ function updateTurnUI(shotsLeft) {
     badge.innerText = `Kalan Atış: ${shotsLeft}`;
 
     if (myTurn) {
-        indicator.innerText = "SIRA SENDE! 🎯";
+        indicator.innerText = "SIRA SENDE! ATİŞ YAP 🎯";
         indicator.style.color = "#05d9e8"; 
-        switchTab('enemy-area');
     } else {
         indicator.innerText = "RAKİBİN SIRASI... ⏳";
         indicator.style.color = "#ff2a6d"; 
-        switchTab('my-area');
     }
 }
 
@@ -385,21 +469,31 @@ socket.on('receiveAttack', (data) => {
     const myBoard = document.getElementById('my-board');
     const targetCell = myBoard.children[data.index];
     let result = 'miss';
+    let destroyedType = null;
 
     if (targetCell.classList.contains('motor')) {
         result = 'hit';
         myHitsTaken++;
-        targetCell.classList.add('hit');
+        targetCell.classList.add('hit'); // 🔥 ALEV EMOJİSİ VE RENK
         triggerShake('my-board');
+
+        // Batan motor var mı kontrol et
+        const motorObj = placedMotors.find(m => m.cells.includes(data.index));
+        if (motorObj) {
+            motorObj.hits++;
+            if (motorObj.hits === motorObj.cells.length) {
+                destroyedType = motorObj.type;
+            }
+        }
     } else {
-        targetCell.classList.add('miss');
+        targetCell.classList.add('miss'); // ❌ ÇARPI EMOJİSİ
     }
 
     socket.emit('attackResult', { 
         roomCode: currentRoom, 
         index: data.index, 
         result: result,
-        destroyedMotor: false,
+        destroyedType: destroyedType,
         shooterId: data.shooterId 
     });
 
@@ -408,15 +502,28 @@ socket.on('receiveAttack', (data) => {
     }
 });
 
+// TAM BATAN MOTORUN RESMİNİ ÇIKARMA
 socket.on('updateBoard', (data) => {
-    const enemyCells = document.getElementById('enemy-board').children;
+    const enemyBoard = document.getElementById('enemy-board');
+    const enemyCells = enemyBoard.children;
     const targetCell = enemyCells[data.index];
 
     if (data.result === 'hit') {
-        targetCell.classList.add('hit');
+        targetCell.classList.add('hit'); // 🔥 ALEV EMOJİSİ
         triggerShake('enemy-board');
+
+        // Motor tamamen batan biri olduysa orijinal görselini tam o kare üzerinde patlat
+        if (data.destroyedType) {
+            const destroyedImg = document.createElement('img');
+            destroyedImg.src = MOTOR_IMAGES[data.destroyedType];
+            destroyedImg.classList.add('destroyed-motor-overlay');
+            destroyedImg.style.width = '100%';
+            destroyedImg.style.height = '100%';
+            targetCell.appendChild(destroyedImg);
+            showModal(`TEBRİKLER! Rakibin ${data.destroyedType.toUpperCase()} motorunu tamamen batırdın! 💥🏍️`);
+        }
     } else {
-        targetCell.classList.add('miss');
+        targetCell.classList.add('miss'); // ❌ ÇARPI EMOJİSİ
     }
 });
 
@@ -457,5 +564,4 @@ socket.on('gameEnded', (data) => {
 socket.on('startRematch', (data) => {
     showModal("Rövanş Başlıyor! Motorlarınızı hazırlayın.");
     setupFleetSelectorBar();
-    switchTab('my-area');
 });

@@ -32,22 +32,15 @@ button.btn-action { background: #05d9e8; color: #0f172a; font-weight: 800; }
 
 .btn-ready-glow { width: 100%; max-width: 340px; margin-top: 10px; background: #05d9e8; color: #051923; font-size: 16px; font-weight: 900; }
 
-.boards-container { display: flex; justify-content: center; gap: 20px; margin-top: 5px; position: relative; }
-
-/* SAHALARIN KESİN GİZLENMESİ (ÇAKIŞMAYI KÖKTEN ÇÖZEN KISIM) */
-.board-section { 
-    width: 100%; 
-    max-width: 340px; 
-    margin: 0 auto; 
+/* ALTLI ÜSTLÜ (DİKEY) TAHTA DİZİLİMİ - ÇAKIŞMA SIFIR */
+.boards-container { 
+    display: flex; 
+    flex-direction: column; 
+    align-items: center; 
+    gap: 15px; 
+    margin-top: 5px; 
 }
-
-/* AKTİF OLMAYAN SAHA KESİNLİKLE EKRANDAN GİDER */
-.board-section:not(.active-tab) { 
-    display: none !important; 
-}
-.board-section.active-tab { 
-    display: block !important; 
-}
+.board-section { width: 100%; max-width: 340px; }
 
 /* GRID VE HÜCRE YAPISI */
 .grid { 
@@ -82,8 +75,12 @@ button.btn-action { background: #05d9e8; color: #0f172a; font-weight: 800; }
 }
 
 .cell.motor { background-color: rgba(5, 217, 232, 0.15); }
+
+/* ISKA: ÇARPI ❌ | VURUŞ: ALEV 🔥 */
 .cell.hit { background-color: rgba(255, 42, 109, 0.4) !important; }
+.cell.hit::after { content: "🔥"; font-size: 16px; z-index: 15; }
 .cell.miss { background-color: #1a202c !important; }
+.cell.miss::after { content: "❌"; font-size: 14px; opacity: 0.7; }
 
 /* BÜTÜN MOTOR GÖRSELİ KATMANI */
 .motor-overlay-img {
@@ -93,6 +90,21 @@ button.btn-action { background: #05d9e8; color: #0f172a; font-weight: 800; }
     pointer-events: none;
     z-index: 10;
     object-fit: contain;
+}
+
+/* TAM BATAN MOTORUN ORTAYA ÇIKAN GÖRSELİ */
+.destroyed-motor-overlay {
+    position: absolute;
+    pointer-events: none;
+    z-index: 20;
+    object-fit: contain;
+    filter: drop-shadow(0 0 8px #ff2a6d);
+    animation: popDestroy 0.4s ease-out;
+}
+
+@keyframes popDestroy {
+    0% { transform: scale(0.5); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
 }
 
 /* ALT ŞERİT FİLO SEÇİMİ */
@@ -133,15 +145,10 @@ button.btn-action { background: #05d9e8; color: #0f172a; font-weight: 800; }
 
 .shots-badge { background: #1e293b; color: #05d9e8; padding: 6px 14px; border-radius: 20px; display: inline-block; margin-bottom: 8px; font-weight: bold; border: 1px solid #05d9e8; }
 
-.mobile-tabs { display: flex; gap: 10px; justify-content: center; margin-bottom: 10px; }
-.tab-btn { background: #121829; color: #94a3b8; }
-.tab-btn.active { background: #ff2a6d; color: white; }
-
 .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 1000; justify-content: center; align-items: center; }
 .modal-overlay.active { display: flex; }
 .modal-content { background: #121829; border: 2px solid #ff2a6d; padding: 25px; border-radius: 16px; max-width: 320px; width: 88%; color: white; }
 
 @media (max-width: 768px) {
-    .boards-container { flex-direction: column; }
     .grid { max-width: 88vw; }
 }
