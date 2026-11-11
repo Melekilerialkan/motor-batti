@@ -26,14 +26,6 @@ async function initDB() {
                 total_wins INT DEFAULT 0,
                 total_losses INT DEFAULT 0
             );
-
-            CREATE TABLE IF NOT EXISTS match_history (
-                player1_id INT REFERENCES users(id),
-                player2_id INT REFERENCES users(id),
-                player1_wins INT DEFAULT 0,
-                player2_wins INT DEFAULT 0,
-                PRIMARY KEY (player1_id, player2_id)
-            );
         `);
         console.log("Veritabanı ve tablolar hazır! 🚀");
     } catch (err) {
@@ -82,7 +74,7 @@ io.on('connection', (socket) => {
                 const match = await bcrypt.compare(data.password, user.password);
                 if (match) {
                     onlineUsers[socket.id] = { id: socket.id, username: user.username, db_id: user.id };
-                    socket.emit('loginSuccess', { username: user.username, wins: user.total_wins || 0, losses: user.total_losses || 0 });
+                    socket.emit('loginSuccess', { username: user.username, db_id: user.id, wins: user.total_wins || 0, losses: user.total_losses || 0 });
                 } else {
                     socket.emit('appError', { message: 'Şifre hatalı!' });
                 }
@@ -104,7 +96,8 @@ io.on('connection', (socket) => {
                 readyCount: 0,
                 turn: null,
                 settings: data.settings || { fleetMode: 'normal', touchMode: 'degsin', shotMode: 'combo' },
-                shotsLeft: 0
+                shotsLeft: 0,
+                rematchVotes: 0
             };
         }
         
@@ -126,7 +119,7 @@ io.on('connection', (socket) => {
             socket.emit('appAlert', { message: 'Odaya katıldın! Kurallar belirlendi, rakip bekleniyor...' });
         } else if (room.players.length === 2) {
             io.to(code).emit('gameStart', { 
-                message: 'Rakip bağlandı! Yerleşimi yapın.',
+                message: 'Rakip bağlandı! Görsel filonuzu yerleştirin.',
                 settings: room.settings
             });
         }
@@ -207,11 +200,25 @@ io.on('connection', (socket) => {
                     await pool.query('UPDATE users SET total_wins = total_wins + 1 WHERE id = $1', [winner.db_id]);
                     await pool.query('UPDATE users SET total_losses = total_losses + 1 WHERE id = $1', [loser.db_id]);
                 } catch (e) {
-                    console.error("DB Skor Hatası:", e.message);
+                    console.error("DB Güncelleme Hatası:", e.message);
                 }
             }
             io.to(data.roomCode).emit('gameEnded', { winner: winner ? winner.username : 'Rakip' });
-            delete rooms[data.roomCode];
+        }
+    });
+
+    // RÖVANŞ MEKANİZMASI
+    socket.on('requestRematch', (data) => {
+        const room = rooms[data.roomCode];
+        if (room) {
+            room.rematchVotes = (room.rematchVotes || 0) + 1;
+            socket.to(data.roomCode).emit('rematchOffered', { sender: onlineUsers[socket.id]?.username || 'Rakip' });
+            if (room.rematchVotes === 2) {
+                room.readyCount = 0;
+                room.rematchVotes = 0;
+                room.players.forEach(p => p.aliveMotorsCount = room.settings.fleetMode === 'helmets' ? 5 : 6);
+                io.to(data.roomCode).emit('startRematch', { settings: room.settings });
+            }
         }
     });
 

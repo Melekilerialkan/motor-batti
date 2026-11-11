@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <!-- 1. GİRİŞ VE KAYIT -->
+    <!-- 1. GİRİŞ VE KAYIT EKRANI -->
     <div id="auth-screen" class="screen active">
         <h1>Motor Battı 🏍️</h1>
         <div class="form-group">
@@ -22,7 +22,10 @@
 
     <!-- 2. LOBİ VE MOD SEÇİMİ -->
     <div id="lobby-screen" class="screen">
-        <h2 id="welcome-text"></h2>
+        <div class="header-user">
+            <h2 id="welcome-text"></h2>
+            <button onclick="logout()" class="btn-danger">Çıkış Yap 🚪</button>
+        </div>
         <div id="stats-panel"></div>
         
         <div class="form-group room-settings-box">
@@ -30,13 +33,13 @@
             
             <label>Filo Modu:</label>
             <select id="setting-fleet">
-                <option value="normal">Standart Motorlar (4'lü, 3'lü, 2'li)</option>
+                <option value="normal">Standart Filo (Kırmızı, L-Motokros, Scooter)</option>
                 <option value="helmets">Kask & Tek Motor Modu (1 Motor + 4 Kask)</option>
             </select>
 
             <label>Bitişiklik Kuralı:</label>
             <select id="setting-touch">
-                <option value="degsin">Değsin (Serbest Yerleşim)</option>
+                <option value="degsin">Değsin (Serbest)</option>
                 <option value="degmesin">Değmesin (Etrafı Boş Kalacak)</option>
             </select>
 
@@ -66,7 +69,7 @@
                 <div id="my-board" class="grid"></div>
                 
                 <div id="motor-fleet">
-                    <h4>Motor Seç ve Yerleştir</h4>
+                    <h4>Filo Yerleştirme</h4>
                     <button id="btn-rotate" onclick="toggleRotation()">Yön: YATAY 🔄</button>
                     <div class="fleet-list" id="fleet-list-container"></div>
                 </div>
@@ -81,11 +84,14 @@
         </div>
     </div>
 
-    <!-- SİTE İÇİ MODAL POP-UP -->
+    <!-- SİTE İÇİ POP-UP (MODAL) -->
     <div id="custom-modal" class="modal-overlay">
         <div class="modal-content">
             <p id="modal-message">Uyarı</p>
-            <button onclick="closeModal()">Tamam</button>
+            <div id="modal-actions">
+                <button id="modal-btn-primary" onclick="closeModal()">Tamam</button>
+                <button id="modal-btn-secondary" style="display:none; background:#0f3460; margin-top:8px;">Vazgeç</button>
+            </div>
         </div>
     </div>
 
